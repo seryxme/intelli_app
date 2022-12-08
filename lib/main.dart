@@ -10,17 +10,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'IntelliApp Name Generator',
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('IntelliApp Name Generator'),
-        ),
-        body: const Center(
-          // child: Text('Hello World'),
-          child: RandomWords(),
-        ),
-      ),
+      home: RandomWords(),
     );
   }
 }
@@ -34,25 +26,84 @@ class RandomWords extends StatefulWidget {
 
 class _RandomWordsState extends State<RandomWords> {
   final _wordList = <WordPair>[];
+  final _favorites = <WordPair>{};
   final _enlargeFont = const TextStyle(fontSize: 18);
+  void _pushFavorites() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          final tiles = _favorites.map(
+              (pair) {
+                return ListTile(
+                  title: Text(
+                    pair.asPascalCase,
+                    style: _enlargeFont,
+                  ),
+                );
+              },
+          );
+          final divided = tiles.isNotEmpty ? ListTile.divideTiles(
+              context: context,
+              tiles: tiles,
+              ).toList() : <Widget>[];
+
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Favorites'),
+            ),
+            body: ListView(children: divided,),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemBuilder: (context, i) {
-        if (i.isOdd) return const Divider();
-
-        final index = i ~/ 2;
-        if (index >= _wordList.length) {
-          _wordList.addAll(generateWordPairs().take(10));
-        }
-        return ListTile(
-          title: Text(
-            _wordList[index].asPascalCase,
-            style: _enlargeFont,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('IntelliApp Name Generator'),
+        actions: [
+          IconButton(
+              onPressed: _pushFavorites,
+              icon: const Icon(Icons.list),
+            tooltip: 'Favorites',
           ),
-        );
-      },
+        ],
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemBuilder: (context, i) {
+          if (i.isOdd) return const Divider();
+
+          final index = i ~/ 2;
+          if (index >= _wordList.length) {
+            _wordList.addAll(generateWordPairs().take(10));
+          }
+
+          final favorited = _favorites.contains(_wordList[index]);
+          return ListTile(
+            title: Text(
+              _wordList[index].asPascalCase,
+              style: _enlargeFont,
+            ),
+            trailing: Icon(
+              favorited ? Icons.favorite : Icons.favorite_border,
+              color: favorited ? Colors.pink : null,
+              semanticLabel: favorited ? 'Remove from favorites' : 'Save',
+            ),
+            onTap: () {
+              setState(() {
+                if (favorited) {
+                  _favorites.remove(_wordList[index]);
+                } else {
+                  _favorites.add(_wordList[index]);
+                }
+              });
+            },
+          );
+        },
+      ),
     );
   }
 }
